@@ -28,7 +28,8 @@ pip3 install -r requirements.txt
 cd ~/yasmin_ws/src/
 git clone https://github.com/RCPRG-ros-pkg/HeROS-use-case.git
 cd ..
-source /opt/humble/setup.bash
+source /opt/ros/humble/setup.bash
 colcon build
+source install/setup.bash
 ```
 ## Running
