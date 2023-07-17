@@ -1,7 +1,7 @@
 # HeROS - test scenario
 
 ## Description
-The goal of the project is to develop methods of cooperation between manipulators and mobile robots using the ROS 2 framework. MiniRyś mobile robot transports objects between two Dobot Magician manipulators - one of them loads the object onto the robot and the other takes the object off at the unloading point. In this case, the multi-robot system (MRS) has a central architecture - a finite state machine was used to allocate tasks to the robots
+The goal of this project is to develop methods of cooperation between manipulators and mobile robots using the ROS 2 framework. MiniRyś mobile robot transports objects between two Dobot Magician manipulators - one of them loads the object onto the mobile robot and the other takes the object off at the unloading point. In this case, the multi-robot system (MRS) has a central architecture - a finite state machine was used to allocate tasks to the robots
 
 As part of the project, we used YASMIN. It is a project focused on implementing robot behaviors using Finite State Machines (FSM). It is available for ROS 2, Python and C++. For more information, see:
 * [**YASMIN GitHub repository**](https://github.com/uleroboticsgroup/yasmin)
@@ -33,3 +33,14 @@ colcon build
 source install/setup.bash
 ```
 ## Running
+Run node with FSM:
+```bash
+ros2 run heros_test_scenario cubes_transport
+```
+
+In another terminal, run _YASMIN Viewer_ so you can monitor the state of the FSM:
+```bash
+ros2 run yasmin_viewer yasmin_viewer_node
+```
+
+In your web browser open http://localhost:5000/. In the checkbox at the top of the page, change _ALL_ to _HEROS\_SCENARIO_ to enlarge the FSM visualization. 
