@@ -21,6 +21,7 @@ setup(
     entry_points={
         'console_scripts': [
             "cubes_transport = heros_test_scenario.cubes_transport:main",
+            "subscriber_test = heros_test_scenario.subscriber_test:main",
         ],
     },
 )
