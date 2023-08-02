@@ -28,13 +28,13 @@ class PlaceCubeOnRys(MonitorState):
             pose_msg = PoseStamped()
             pose_msg.header.stamp = self.node_.get_clock().now().to_msg()
             pose_msg.header.frame_id = 'map'
-            pose_msg.pose.position.x = 0.9884449211724036
-            pose_msg.pose.position.y = -0.0538024593238705
+            pose_msg.pose.position.x = 0.1381919755775304
+            pose_msg.pose.position.y = 0.0704193727414686
             pose_msg.pose.position.z = 0.0
             pose_msg.pose.orientation.x = 0.0
             pose_msg.pose.orientation.y = 0.0
-            pose_msg.pose.orientation.z = 0.7092453993500845
-            pose_msg.pose.orientation.w = 0.7049616751999638
+            pose_msg.pose.orientation.z = 0.830354631285275
+            pose_msg.pose.orientation.w = 0.5572353060450271
             self.publisher_rys.publish(pose_msg)
             return "done"
         elif blackboard.msg.data == "empty":
@@ -43,12 +43,15 @@ class PlaceCubeOnRys(MonitorState):
 class DriveToTarget(MonitorState):
     def __init__(self, node: Node) -> None:
         super().__init__(node,  GoalStatusArray,  "/navigate_to_pose/_action/status", ["done", "failed"],
-                        self.state_callback, qos=10, msg_queue=10, timeout=None)
+                        self.state_callback, qos=10, msg_queue=100, timeout=None)
         self.node_ = node
         self.publisher_dobot = node.create_publisher(String, '/heros_tasks', 10)
 
     def state_callback(self, blackboard: Blackboard) -> str:
+        for status in blackboard.msg.status_list:
+            self.node_.get_logger().info("Received msg: " + str(status.status))
         self.node_.get_logger().info("Received msg: " + str(blackboard.msg))
+        
         if blackboard.msg.status_list[0].status == 4:
             print("Executing state PickUpFromRys")
             self.publisher_dobot.publish(String(data = 'unload'))
@@ -68,24 +71,26 @@ class PickUpFromRys(MonitorState):
             pose_msg = PoseStamped()
             pose_msg.header.stamp = self.node_.get_clock().now().to_msg()
             pose_msg.header.frame_id = 'map'
-            pose_msg.pose.position.x = 0.05452109729691368
-            pose_msg.pose.position.y = -0.4812417139251351
+            pose_msg.pose.position.x = -0.6962357863659516
+            pose_msg.pose.position.y = -0.5556228218266603
             pose_msg.pose.position.z = 0.0
             pose_msg.pose.orientation.x = 0.0
             pose_msg.pose.orientation.y = 0.0
-            pose_msg.pose.orientation.z = -0.6766263114289787
-            pose_msg.pose.orientation.w = 0.7363265815397504
+            pose_msg.pose.orientation.z = -0.5455303528242499
+            pose_msg.pose.orientation.w = 0.8380910655456538
             self.publisher_rys.publish(pose_msg)
             return "done"
     
 class DriveToSupply(MonitorState):
     def __init__(self, node: Node) -> None:
         super().__init__(node,  GoalStatusArray,  "/navigate_to_pose/_action/status", ["done", "failed"],
-                        self.state_callback, qos=10, msg_queue=10, timeout=None)
+                        self.state_callback, qos=10, msg_queue=100, timeout=None)
         self.node_ = node
         self.publisher_dobot = node.create_publisher(String, '/heros_tasks', 10)
 
     def state_callback(self, blackboard: Blackboard) -> str:
+        for status in blackboard.msg.status_list:
+            self.node_.get_logger().info("Received msg: " + str(status.status))
         self.node_.get_logger().info("Received msg: " + str(blackboard.msg))
         if blackboard.msg.status_list[0].status == 4:
             print("Executing state PlaceCubeOnRys")
