@@ -1,145 +1,118 @@
 import time
 import rclpy
 from simple_node import Node
-from yasmin import State
-from yasmin import StateMachine
+from yasmin import StateMachine, Blackboard
+from yasmin_ros import MonitorState
 from yasmin_viewer import YasminViewerPub
 from std_msgs.msg import String
-from geometry_msgs.msg import PoseStamped
 from action_msgs.msg import GoalStatusArray
+from geometry_msgs.msg import PoseStamped
 
-# Conditions of state transitions
-CUBE_PLACED_ON_MINIRYS = False
-CUBE_TAKEN_OFF_MINIRYS = False
-NO_MORE_CUBES_LEFT = False
-GOAL_SUCCEEDED = False
 
-class PlaceCubeOnRys(State, Node):
-    def __init__(self):
-        super().__init__(["done", "failed", "no cubes"])
-        Node.__init__(self, "yasmin_node_place_cube") 
-        self.publisher_ = self.create_publisher(String, '/heros_tasks', 10)
-
-    def execute(self, blackboard):
-        self.get_logger().info("Executing state PlaceCubeOnRys")
-        self.publisher_.publish(String(data = 'load'))
-        while (not CUBE_PLACED_ON_MINIRYS) and (not NO_MORE_CUBES_LEFT):
-            self.get_logger().info('Waiting for cube to be loaded')
-            time.sleep(1)
-
-        if CUBE_PLACED_ON_MINIRYS == True:
-             return "done"
-        elif NO_MORE_CUBES_LEFT == True:
+class PlaceCubeOnRys(MonitorState):
+    def __init__(self, node: Node) -> None:
+        super().__init__(node,  String,  "/loading_manipulator", ["done", "failed", "no cubes"], 
+                        self.state_callback, qos=10, msg_queue=10, timeout=None)
+        self.node_ = node
+        self.publisher_dobot = node.create_publisher(String, '/heros_tasks', 10)
+        print("Starting finite state machine in 5 seconds ...")
+        time.sleep(5)
+        print("Executing state PlaceCubeOnRys")
+        self.publisher_dobot.publish(String(data = 'load'))
+        self.publisher_rys = node.create_publisher(PoseStamped, '/goal_pose', 10)
+        
+    def state_callback(self, blackboard: Blackboard) -> str:
+        self.node_.get_logger().info("Received msg: " + str(blackboard.msg))
+        if blackboard.msg.data == "loaded":
+            print("Executing state DriveToTarget")
+            pose_msg = PoseStamped()
+            pose_msg.header.stamp = self.node_.get_clock().now().to_msg()
+            pose_msg.header.frame_id = 'map'
+            pose_msg.pose.position.x = 0.9884449211724036
+            pose_msg.pose.position.y = -0.0538024593238705
+            pose_msg.pose.position.z = 0.0
+            pose_msg.pose.orientation.x = 0.0
+            pose_msg.pose.orientation.y = 0.0
+            pose_msg.pose.orientation.z = 0.7092453993500845
+            pose_msg.pose.orientation.w = 0.7049616751999638
+            self.publisher_rys.publish(pose_msg)
+            return "done"
+        elif blackboard.msg.data == "empty":
             return "no cubes"
 
-class DriveToTarget(State, Node):
-    def __init__(self):
-        super().__init__(["done", "failed"])
-        Node.__init__(self, "yasmin_node_drive_to_target") 
-        self.publisher_ = self.create_publisher(PoseStamped, '/goal_pose', 10)
-        global GOAL_SUCCEEDED
+class DriveToTarget(MonitorState):
+    def __init__(self, node: Node) -> None:
+        super().__init__(node,  GoalStatusArray,  "/navigate_to_pose/_action/status", ["done", "failed"],
+                        self.state_callback, qos=10, msg_queue=10, timeout=None)
+        self.node_ = node
+        self.publisher_dobot = node.create_publisher(String, '/heros_tasks', 10)
 
-    def execute(self, blackboard):
-        self.get_logger().info("Executing state DriveToTarget") # TODO Kuba
-        pose_msg = PoseStamped()
-        pose_msg.header.stamp = self.get_clock().now().to_msg()
-        pose_msg.header.frame_id = 'map'
-        pose_msg.pose.position.x = 0.9884449211724036
-        pose_msg.pose.position.y = -0.0538024593238705
-        pose_msg.pose.position.z = 0.0
-        pose_msg.pose.orientation.x = 0.0
-        pose_msg.pose.orientation.y = 0.0
-        pose_msg.pose.orientation.z = 0.7092453993500845
-        pose_msg.pose.orientation.w = 0.7049616751999638
-        self.publisher_.publish(pose_msg)
-        while not GOAL_SUCCEEDED:
-            self.get_logger().info('Waiting for robot to drive to target')
-            self.get_logger().info('Bool "%s"' % GOAL_SUCCEEDED)
-            time.sleep(1) 
-        return "done"
-       
+    def state_callback(self, blackboard: Blackboard) -> str:
+        self.node_.get_logger().info("Received msg: " + str(blackboard.msg))
+        if blackboard.msg.status_list[0].status == 4:
+            print("Executing state PickUpFromRys")
+            self.publisher_dobot.publish(String(data = 'unload'))
+            return "done"
     
-class PickUpFromRys(State, Node):
-    def __init__(self):
-        super().__init__(["done", "failed"])
-        Node.__init__(self, "yasmin_node_pick_up_cube") 
-        self.publisher_ = self.create_publisher(String, '/heros_tasks', 10)
+class PickUpFromRys(MonitorState):
+    def __init__(self, node: Node) -> None:
+        super().__init__(node,  String,  "/unloading_manipulator", ["done", "failed"], 
+                        self.state_callback, qos=10, msg_queue=10, timeout=None)
+        self.node_ = node
+        self.publisher_rys = node.create_publisher(PoseStamped, '/goal_pose', 10)
 
-    def execute(self, blackboard):
-        self.get_logger().info("Executing state PickUpFromRys")
-        self.publisher_.publish(String(data = 'unload'))
-        while not CUBE_TAKEN_OFF_MINIRYS:
-            self.get_logger().info('Waiting for cube to be unloaded')
-            time.sleep(1)
-        return "done"
+    def state_callback(self, blackboard: Blackboard) -> str:
+        self.node_.get_logger().info("Received msg: " + str(blackboard.msg))
+        if blackboard.msg.data == "unloaded":
+            print("Executing state DriveToSupply")
+            pose_msg = PoseStamped()
+            pose_msg.header.stamp = self.node_.get_clock().now().to_msg()
+            pose_msg.header.frame_id = 'map'
+            pose_msg.pose.position.x = 0.05452109729691368
+            pose_msg.pose.position.y = -0.4812417139251351
+            pose_msg.pose.position.z = 0.0
+            pose_msg.pose.orientation.x = 0.0
+            pose_msg.pose.orientation.y = 0.0
+            pose_msg.pose.orientation.z = -0.6766263114289787
+            pose_msg.pose.orientation.w = 0.7363265815397504
+            self.publisher_rys.publish(pose_msg)
+            return "done"
     
-    
-class DriveToSupply(State, Node):
-    def __init__(self):
-        super().__init__(["done", "failed"])
-        Node.__init__(self, "yasmin_node_drive_to_supply") 
-        self.publisher_ = self.create_publisher(PoseStamped, '/goal_pose', 10)
+class DriveToSupply(MonitorState):
+    def __init__(self, node: Node) -> None:
+        super().__init__(node,  GoalStatusArray,  "/navigate_to_pose/_action/status", ["done", "failed"],
+                        self.state_callback, qos=10, msg_queue=10, timeout=None)
+        self.node_ = node
+        self.publisher_dobot = node.create_publisher(String, '/heros_tasks', 10)
 
-    def execute(self, blackboard):
-        self.get_logger().info("Executing state DriveToSupply") # TODO Kuba
-        pose_msg = PoseStamped()
-        pose_msg.header.stamp = self.get_clock().now().to_msg()
-        pose_msg.header.frame_id = 'map'
-        pose_msg.pose.position.x = 0.05452109729691368
-        pose_msg.pose.position.y = -0.4812417139251351
-        pose_msg.pose.position.z = 0.0
-        pose_msg.pose.orientation.x = 0.0
-        pose_msg.pose.orientation.y = 0.0
-        pose_msg.pose.orientation.z = -0.6766263114289787
-        pose_msg.pose.orientation.w = 0.7363265815397504
-        self.publisher_.publish(pose_msg)
-        while not GOAL_SUCCEEDED:
-            self.get_logger().info('Waiting for robot to drive to supply')
-            time.sleep(1) 
-        return "done"
+    def state_callback(self, blackboard: Blackboard) -> str:
+        self.node_.get_logger().info("Received msg: " + str(blackboard.msg))
+        if blackboard.msg.status_list[0].status == 4:
+            print("Executing state PlaceCubeOnRys")
+            self.publisher_dobot.publish(String(data = 'load'))
+            return "done"
 
 
 class TestScenarioNode(Node):
 
     def __init__(self):
         super().__init__("yasmin_node")
-        global GOAL_SUCCEEDED
-        # self.goal_succeed = False
 
-        # Subscribers
-        self.loading_subscription = self.create_subscription(
-            String,
-            '/loading_manipulator',
-            self.loading_manipulator_callback,
-            10)
-
-        self.unloading_subscription = self.create_subscription(
-            String,
-            '/unloading_manipulator',
-            self.unloading_manipulator_callback,
-            10)
-        
-        self.goal_status_subscription = self.create_subscription(
-            GoalStatusArray,
-            '/navigate_to_pose/_action/status',
-            self.pose_status_callback,
-            10)
-        
         # create a state machine
         sm = StateMachine(outcomes=["Task accomplished", "Abort task execution", "Path is blocked"])
 
         # add states
-        sm.add_state("[Manipulator] Place cube on mobile robot", PlaceCubeOnRys(),
+        sm.add_state("[Manipulator] Place cube on mobile robot", PlaceCubeOnRys(self),
                      transitions={"done": "[Mobile robot] Drive to unloading zone",
                                   "failed": "Abort task execution",
                                   "no cubes": "Task accomplished"})
-        sm.add_state("[Mobile robot] Drive to unloading zone", DriveToTarget(),
+        sm.add_state("[Mobile robot] Drive to unloading zone", DriveToTarget(self),
                      transitions={"done": "[Manipulator] Pick up cube from mobile robot",
                                   "failed": "Path is blocked"})
-        sm.add_state("[Manipulator] Pick up cube from mobile robot", PickUpFromRys(),
+        sm.add_state("[Manipulator] Pick up cube from mobile robot", PickUpFromRys(self),
                      transitions={"done": "[Mobile robot] Drive to loading zone",
                                   "failed": "Abort task execution"})
-        sm.add_state("[Mobile robot] Drive to loading zone", DriveToSupply(),
+        sm.add_state("[Mobile robot] Drive to loading zone", DriveToSupply(self),
                      transitions={"done": "[Manipulator] Place cube on mobile robot",
                                   "failed": "Path is blocked"})
         
@@ -149,52 +122,6 @@ class TestScenarioNode(Node):
         outcome = sm()
         print(outcome)
 
-    # def getGoalFlag(self):
-    #     return self.goal_succeed
-
-    # def resetGoalFlag(self):
-    #     self.goal_succeed = False
-
-    def loading_manipulator_callback(self, msg):
-        self.get_logger().info('FSM received message: "%s"' % msg.data)
-        global GOAL_SUCCEEDED
-        if msg.data == "loaded":
-            global CUBE_PLACED_ON_MINIRYS
-            CUBE_PLACED_ON_MINIRYS = True
-
-            global CUBE_TAKEN_OFF_MINIRYS
-            CUBE_TAKEN_OFF_MINIRYS = False
-
-            GOAL_SUCCEEDED = False
-        elif msg.data == "empty":
-            global NO_MORE_CUBES_LEFT
-            NO_MORE_CUBES_LEFT = True
-
-    def unloading_manipulator_callback(self, msg):
-        global GOAL_SUCCEEDED
-        self.get_logger().info('FSM received message: "%s"' % msg.data)
-        if msg.data == "unloaded":
-            global CUBE_TAKEN_OFF_MINIRYS
-            CUBE_TAKEN_OFF_MINIRYS = True
-
-            global CUBE_PLACED_ON_MINIRYS
-            CUBE_PLACED_ON_MINIRYS = False
-
-            GOAL_SUCCEEDED = False
-
-    def pose_status_callback(self, msg):
-        self.get_logger().info('FSM received GoalStatus message: "%s"' % msg.status_list[0].status)
-        global GOAL_SUCCEEDED
-        if msg.status_list[0].status == 4:
-            self.get_logger().info('IM IN')
-            # goal_succeed = True
-            # global GOAL_SUCCEEDED
-            GOAL_SUCCEEDED = True
-        else:
-            self.get_logger().info('IM OUT')
-            # goal_succeed = False
-            # global GOAL_SUCCEEDED
-            GOAL_SUCCEEDED = False
 
 def main(args=None):
 
@@ -205,4 +132,3 @@ def main(args=None):
 
 if __name__ == "__main__":
     main()
-    
