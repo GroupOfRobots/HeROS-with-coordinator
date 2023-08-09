@@ -30,13 +30,13 @@ class PlaceCubeOnRys(MonitorState):
             pose_msg = PoseStamped()
             pose_msg.header.stamp = self.node_.get_clock().now().to_msg()
             pose_msg.header.frame_id = 'map'
-            pose_msg.pose.position.x = 0.1381919755775304
-            pose_msg.pose.position.y = 0.0704193727414686
+            pose_msg.pose.position.x = 0.10228345482234256
+            pose_msg.pose.position.y = 0.0706227922760096
             pose_msg.pose.position.z = 0.0
             pose_msg.pose.orientation.x = 0.0
             pose_msg.pose.orientation.y = 0.0
-            pose_msg.pose.orientation.z = 0.830354631285275
-            pose_msg.pose.orientation.w = 0.5572353060450271
+            pose_msg.pose.orientation.z = 0.7950551176895646
+            pose_msg.pose.orientation.w = 0.6065371875125487
             self.publisher_rys.publish(pose_msg)
             return "done"
         elif msg.data == "empty":
