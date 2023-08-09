@@ -9,6 +9,8 @@ from action_msgs.msg import GoalStatusArray
 from geometry_msgs.msg import PoseStamped
 
 
+GoalStatusList = ['UNKNOWN', 'ACCEPTED', 'EXECUTING', 'CANCELING', 'SUCCEEDED', 'CANCELED', 'ABORTED']
+
 class PlaceCubeOnRys(MonitorState):
     def __init__(self, node: Node) -> None:
         super().__init__(node,  String,  "/loading_manipulator", ["done", "failed", "no cubes"], 
@@ -48,14 +50,17 @@ class DriveToTarget(MonitorState):
         self.publisher_dobot = node.create_publisher(String, '/heros_tasks', 10)
 
     def state_callback(self, blackboard: Blackboard, msg: GoalStatusArray) -> str:
-        for status in msg.status_list:
-            self.node_.get_logger().info("Received msg: " + str(status.status))
-        self.node_.get_logger().info("Received msg: " + str(msg))
-        
-        if msg.status_list[0].status == 4:
+        for goal in msg.status_list:
+            status = goal.status
+        self.node_.get_logger().info("Received goal status msg: " + GoalStatusList[status])
+
+        if GoalStatusList[status] == 'SUCCEEDED':
             print("Executing state PickUpFromRys")
             self.publisher_dobot.publish(String(data = 'unload'))
             return "done"
+        elif GoalStatusList[status] == 'ABORTED':
+            print("Executing state PlaceCubeOnRys")
+            return "failed"
     
 class PickUpFromRys(MonitorState):
     def __init__(self, node: Node) -> None:
@@ -89,13 +94,17 @@ class DriveToSupply(MonitorState):
         self.publisher_dobot = node.create_publisher(String, '/heros_tasks', 10)
 
     def state_callback(self, blackboard: Blackboard, msg: GoalStatusArray) -> str:
-        for status in msg.status_list:
-            self.node_.get_logger().info("Received msg: " + str(status.status))
-        self.node_.get_logger().info("Received msg: " + str(msg))
-        if msg.status_list[0].status == 4:
+        for goal in msg.status_list:
+            status = goal.status
+        self.node_.get_logger().info("Received goal status msg: " + GoalStatusList[status])
+
+        if GoalStatusList[status] == 'SUCCEEDED':
             print("Executing state PlaceCubeOnRys")
             self.publisher_dobot.publish(String(data = 'load'))
             return "done"
+        elif GoalStatusList[status] == 'ABORTED':
+            print("Executing state PlaceCubeOnRys")
+            return "failed"
 
 
 class TestScenarioNode(Node):
