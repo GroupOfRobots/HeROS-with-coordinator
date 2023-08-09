@@ -76,13 +76,13 @@ class PickUpFromRys(MonitorState):
             pose_msg = PoseStamped()
             pose_msg.header.stamp = self.node_.get_clock().now().to_msg()
             pose_msg.header.frame_id = 'map'
-            pose_msg.pose.position.x = -0.6962357863659516
-            pose_msg.pose.position.y = -0.5556228218266603
+            pose_msg.pose.position.x = -0.7645088956319931
+            pose_msg.pose.position.y = -0.5374438324573643
             pose_msg.pose.position.z = 0.0
             pose_msg.pose.orientation.x = 0.0
             pose_msg.pose.orientation.y = 0.0
-            pose_msg.pose.orientation.z = -0.5455303528242499
-            pose_msg.pose.orientation.w = 0.8380910655456538
+            pose_msg.pose.orientation.z = -0.5866883060979081
+            pose_msg.pose.orientation.w = 0.8098128373198139
             self.publisher_rys.publish(pose_msg)
             return "done"
     
