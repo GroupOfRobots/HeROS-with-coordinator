@@ -21,9 +21,9 @@ class PlaceCubeOnRys(MonitorState):
         self.publisher_dobot.publish(String(data = 'load'))
         self.publisher_rys = node.create_publisher(PoseStamped, '/goal_pose', 10)
         
-    def state_callback(self, blackboard: Blackboard) -> str:
-        self.node_.get_logger().info("Received msg: " + str(blackboard.msg))
-        if blackboard.msg.data == "loaded":
+    def state_callback(self, blackboard: Blackboard, msg: String) -> str:
+        self.node_.get_logger().info("Received msg: " + str(msg))
+        if msg.data == "loaded":
             print("Executing state DriveToTarget")
             pose_msg = PoseStamped()
             pose_msg.header.stamp = self.node_.get_clock().now().to_msg()
@@ -37,7 +37,7 @@ class PlaceCubeOnRys(MonitorState):
             pose_msg.pose.orientation.w = 0.5572353060450271
             self.publisher_rys.publish(pose_msg)
             return "done"
-        elif blackboard.msg.data == "empty":
+        elif msg.data == "empty":
             return "no cubes"
 
 class DriveToTarget(MonitorState):
@@ -47,12 +47,12 @@ class DriveToTarget(MonitorState):
         self.node_ = node
         self.publisher_dobot = node.create_publisher(String, '/heros_tasks', 10)
 
-    def state_callback(self, blackboard: Blackboard) -> str:
-        for status in blackboard.msg.status_list:
+    def state_callback(self, blackboard: Blackboard, msg: GoalStatusArray) -> str:
+        for status in msg.status_list:
             self.node_.get_logger().info("Received msg: " + str(status.status))
-        self.node_.get_logger().info("Received msg: " + str(blackboard.msg))
+        self.node_.get_logger().info("Received msg: " + str(msg))
         
-        if blackboard.msg.status_list[0].status == 4:
+        if msg.status_list[0].status == 4:
             print("Executing state PickUpFromRys")
             self.publisher_dobot.publish(String(data = 'unload'))
             return "done"
@@ -64,9 +64,9 @@ class PickUpFromRys(MonitorState):
         self.node_ = node
         self.publisher_rys = node.create_publisher(PoseStamped, '/goal_pose', 10)
 
-    def state_callback(self, blackboard: Blackboard) -> str:
-        self.node_.get_logger().info("Received msg: " + str(blackboard.msg))
-        if blackboard.msg.data == "unloaded":
+    def state_callback(self, blackboard: Blackboard, msg: String) -> str:
+        self.node_.get_logger().info("Received msg: " + str(msg))
+        if msg.data == "unloaded":
             print("Executing state DriveToSupply")
             pose_msg = PoseStamped()
             pose_msg.header.stamp = self.node_.get_clock().now().to_msg()
@@ -88,11 +88,11 @@ class DriveToSupply(MonitorState):
         self.node_ = node
         self.publisher_dobot = node.create_publisher(String, '/heros_tasks', 10)
 
-    def state_callback(self, blackboard: Blackboard) -> str:
-        for status in blackboard.msg.status_list:
+    def state_callback(self, blackboard: Blackboard, msg: GoalStatusArray) -> str:
+        for status in msg.status_list:
             self.node_.get_logger().info("Received msg: " + str(status.status))
-        self.node_.get_logger().info("Received msg: " + str(blackboard.msg))
-        if blackboard.msg.status_list[0].status == 4:
+        self.node_.get_logger().info("Received msg: " + str(msg))
+        if msg.status_list[0].status == 4:
             print("Executing state PlaceCubeOnRys")
             self.publisher_dobot.publish(String(data = 'load'))
             return "done"
