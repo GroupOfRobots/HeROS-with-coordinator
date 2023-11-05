@@ -1,7 +1,9 @@
-# HeROS - test scenario
+# HeROS with STM-based coordinator
+> **Note**
+> In this case, the multi-robot system (MRS) has a central architecture - a finite state machine was used to allocate tasks to the robots.
 
 ## Description
-The goal of this project is to develop methods of cooperation between manipulators and mobile robots using the ROS 2 framework. MiniRyś mobile robot transports objects between two Dobot Magician manipulators - one of them loads the object onto the mobile robot and the other takes the object off at the unloading point. In this case, the multi-robot system (MRS) has a central architecture - a finite state machine was used to allocate tasks to the robots
+The goal of this project is to develop methods of cooperation between manipulators and mobile robots using the ROS 2 framework. MiniRyś mobile robot transports objects between two Dobot Magician manipulators - one of them loads the object onto the mobile robot and the other takes the object off at the unloading point.
 
 As part of the project, we used YASMIN. It is a project focused on implementing robot behaviors using Finite State Machines (FSM). It is available for ROS 2, Python and C++. For more information, see:
 * [**YASMIN GitHub repository**](https://github.com/uleroboticsgroup/yasmin)
