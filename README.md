@@ -28,7 +28,7 @@ pip3 install -r requirements.txt
 ### Clone HeROS-use-case repository and build workspace
 ```bash
 cd ~/yasmin_ws/src/
-git clone https://github.com/RCPRG-ros-pkg/HeROS-use-case.git
+git clone https://github.com/GroupOfRobots/HeROS-with-coordinator
 cd ..
 source /opt/ros/humble/setup.bash
 colcon build
