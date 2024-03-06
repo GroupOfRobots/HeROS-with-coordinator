@@ -30,13 +30,13 @@ class PlaceCubeOnRys(MonitorState):
             pose_msg = PoseStamped()
             pose_msg.header.stamp = self.node_.get_clock().now().to_msg()
             pose_msg.header.frame_id = 'map'
-            pose_msg.pose.position.x = 0.10228345482234256
-            pose_msg.pose.position.y = 0.0706227922760096
-            pose_msg.pose.position.z = 0.0
+            pose_msg.pose.position.x = -2.3931
+            pose_msg.pose.position.y = 0.93559
+            pose_msg.pose.position.z = 0.055
             pose_msg.pose.orientation.x = 0.0
             pose_msg.pose.orientation.y = 0.0
-            pose_msg.pose.orientation.z = 0.7950551176895646
-            pose_msg.pose.orientation.w = 0.6065371875125487
+            pose_msg.pose.orientation.z = 0.987911
+            pose_msg.pose.orientation.w = 0.155024
             self.publisher_rys.publish(pose_msg)
             return "done"
         elif msg.data == "empty":
@@ -76,13 +76,13 @@ class PickUpFromRys(MonitorState):
             pose_msg = PoseStamped()
             pose_msg.header.stamp = self.node_.get_clock().now().to_msg()
             pose_msg.header.frame_id = 'map'
-            pose_msg.pose.position.x = -0.7645088956319931
-            pose_msg.pose.position.y = -0.5374438324573643
-            pose_msg.pose.position.z = 0.0
+            pose_msg.pose.position.x = -0.68334
+            pose_msg.pose.position.y = 1.16874
+            pose_msg.pose.position.z = 0.055
             pose_msg.pose.orientation.x = 0.0
             pose_msg.pose.orientation.y = 0.0
-            pose_msg.pose.orientation.z = -0.5866883060979081
-            pose_msg.pose.orientation.w = 0.8098128373198139
+            pose_msg.pose.orientation.z = -0.25613
+            pose_msg.pose.orientation.w = 0.966642
             self.publisher_rys.publish(pose_msg)
             return "done"
     
